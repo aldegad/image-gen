@@ -16,7 +16,7 @@ From Codex skill installer workflows, install this repository as a root skill:
 
 ```bash
 python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
-  --repo aldegad/image-gen-skill \
+  --repo aldegad/image-gen \
   --path .
 ```
 
