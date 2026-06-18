@@ -5,8 +5,8 @@ Codex/Claude skill for generating images through Codex's built-in `image_gen` to
 The main workflow is documented in [`SKILL.md`](SKILL.md). The short version:
 
 - Uses ChatGPT OAuth via Codex, not an `OPENAI_API_KEY` fallback.
-- Spawns an ephemeral Codex session to keep image prompts isolated from the caller's long-running context.
-- Verifies generated PNGs from `~/.codex/generated_images/<session_id>/ig_*.png` instead of trusting model-reported paths.
+- Spawns a fresh Codex session per call to keep image prompts isolated from the caller's long-running context (do **not** use `--ephemeral` — the session rollout must persist for extraction).
+- codex v0.140.0 no longer writes `~/.codex/generated_images/<session_id>/ig_*.png`; the image arrives as inline base64 in the session rollout jsonl. [`scripts/extract_imagegen.py`](scripts/extract_imagegen.py) decodes it deterministically to a real PNG instead of trusting model-reported paths.
 - Uses a stable transparent PNG contract: generate on solid `#FF00FF` or `#00FF00`, then run [`scripts/chroma_key_transparent.py`](scripts/chroma_key_transparent.py).
 - Includes experimental batch and continuation scripts under [`scripts/`](scripts/).
 
