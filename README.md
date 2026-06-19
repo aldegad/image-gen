@@ -1,4 +1,4 @@
-# image-gen skill v1.0
+# image-gen skill v1.1
 
 Codex/Claude skill for generating images through Codex's built-in `image_gen` tool by spawning a fresh `codex exec` session.
 
