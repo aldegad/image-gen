@@ -1,0 +1,4 @@
+{"payload":{"type":"message","role":"assistant","content":"noise before image"}}
+not json
+{"payload":{"type":"image_generation_call","result":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg=="}}
+{"payload":{"type":"image_generation_call","result":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYPj/HwADAgH/5ncLrgAAAABJRU5ErkJggg=="}}

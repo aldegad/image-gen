@@ -360,13 +360,13 @@ PY
 
 기본은 위 single-shot codex exec 패턴. 다음 두 시나리오에서는 별도 모드를 쓴다. 캐노니컬 참조는 **아래 인라인 bash/pseudo 패턴**이다.
 
-> ⚠ `scripts/` 아래 `spike-*.py` 들은 **2026-04-28 Phase 0.x 탐색 spike** 로, codex ≤0.125 의 옛 출력 모델(`~/.codex/generated_images/<sid>/ig_*.png` 디스크 파일을 `find`)에 묶여 있다. v0.140.0 에서는 그 경로가 항상 0 hit 이므로(위 동작 전환 참조) **이 spike 들을 그대로 실행하면 추출이 실패한다.** 일부는 `--sandbox workspace-write` 도 빠져 있다(=silent 실패 원인, `## Pitfalls` 참조). 재사용하려면 PNG 탐색·추출부를 본 문서의 `extract_imagegen.py`(세션 jsonl 인라인 base64 디코드) 흐름으로 교체해야 한다. 아래 인라인 패턴은 이미 v0.140.0 추출 모델로 갱신되어 있다 — spike 파일보다 이쪽을 따른다.
+> 옛 `scripts/spike-*.py` Phase 0.x 탐색 파일들은 codex ≤0.125 의 출력 모델(`~/.codex/generated_images/<sid>/ig_*.png`)과 개인 로컬 fixture 경로에 묶여 있어 제거했다. 아래 인라인 패턴만 현재 캐노니컬 참조다.
 
 ### A. Batch parallel — 게임 에셋 다량 / 카드뉴스 시리즈
 
 같은 캐릭터/스타일을 다른 pose 또는 다른 표정으로 N 장 동시 생성. 매 호출이 독립이고 character lock 은 base ref 첨부 + 동일 prompt 토대로 유지.
 
-- 캐노니컬 패턴: 아래 인라인 bash. (`scripts/spike-codex-exec-parallel.py` 는 옛 `ig_*.png` find + `-o last.txt` + `--sandbox` 누락의 stale spike 라 그대로 실행 금지 — N개 `codex exec` 동시 spawn 의 `threading` 구조만 참고.)
+- 캐노니컬 패턴: 아래 인라인 bash. N개 `codex exec` 를 독립 sandbox 로 동시에 띄우되, 추출은 각 프로세스의 session id 별로 수행한다.
 - **ChatGPT image_gen 동시성 한계 ≈ 4** (실측 2026-04-28). 5번째부터 quota 대기로 ~150s 추가.
 - 시간 단축: 5장 sequential ~375s vs 4-동시 parallel ~230s = ~38%. 50장 단위 batch 면 sequential ~62분 vs parallel ~16분 (약 4배).
 - 패턴 (각 프로세스가 자기 stdout 을 파일로 받아 → 끝나면 SID 추출):
@@ -388,7 +388,7 @@ PY
 
 알렉스가 이미지 한 장 보고 "더 어둡게", "각도 달리", "표정 바꿔" 식 자연어 후속 수정. 같은 thread 안에서 turn 1 = full character spec + base ref attach, turn 2~N = short pose nudge 만. thread context 가 character/style 자동 보존.
 
-- 캐노니컬 패턴: 아래 Python pseudo. (`scripts/spike-app-server-continuation.py` 는 옛 `ig_*.png` find 에 묶인 stale spike 라 그대로 실행 금지 — `app-server --listen stdio://` daemon + JSON-RPC `thread/start`/`turn/start` 의 프로토콜 흐름만 참고. 실제 추출은 `~/.codex/sessions/.../rollout-<thread_id>.jsonl` 에서 `extract_imagegen.py` 로 해야 한다.)
+- 캐노니컬 패턴: 아래 Python pseudo. `app-server --listen stdio://` daemon 과 JSON-RPC `thread/start`/`turn/start` 로 thread 를 유지하되, 실제 추출은 `~/.codex/sessions/.../rollout-<thread_id>.jsonl` 에서 `extract_imagegen.py` 로 수행한다.
 - **검증된 동작** (Phase 0.5): turn 2/3 에서 base ref + style respec 안 박았는데도 character lock 유지 ✓
 - Token 절감 ~85% (full prompt 매번 → short nudge 만)
 - thread session disk 저장: `~/.codex/sessions/YYYY/MM/DD/rollout-<thread_id>.jsonl`. `thread/resume` 으로 다음 세션 이어가기 가능.

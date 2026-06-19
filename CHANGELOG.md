@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 — 2026-06-19
+
+- **정리**: codex ≤0.125 출력 모델과 개인 로컬 fixture 경로에 묶인 `scripts/spike-*.py` 탐색 파일을 제거했다. batch/continuation 설명은 `SKILL.md` 의 인라인 캐노니컬 패턴만 유지한다.
+- **패키징**: Pillow 요구사항을 `requirements.txt` 로 명시했다.
+- **테스트**: `scripts/extract_imagegen.py` 에 fixture 기반 `unittest` regression 테스트를 추가했다. 기본 last-result 선택, `--index`, `--all`, no-result failure, non-PNG failure 를 검증한다.
+
 ## 1.1.0 — 2026-06-18
 
 codex v0.140.0 대응: `image_gen` 출력 추출 방식 전환.
