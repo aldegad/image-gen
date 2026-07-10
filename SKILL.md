@@ -3,7 +3,7 @@ name: image-gen
 description: "Spawn fresh `codex exec` session to call image_gen (ChatGPT OAuth — no API key). Cross-engine — Claude 가 codex 도구 빌릴 때 + Codex 안에서도 prompt-cache 분리 위해 fresh exec 권장. Triggers — 이미지 만들어줘·그림 그려줘·image_gen·generate/make/create an image. Style-transfer via `-i` ref."
 user-invocable: true
 metadata:
-  version: "1.2.0"
+  version: "1.2.1"
   release-stage: stable
 ---
 
@@ -26,9 +26,10 @@ Spawn a fresh `codex exec` session in an empty sandbox dir, ask it to call `imag
 >
 > 아래 본문의 마젠타 예시들은 "소재에 핑크/보라가 없는" 케이스의 프롬프트/fuzz 참고이고, 키 **선택**의 SSoT 는 이 표다.
 
-> ## image_gen 출력 모델 — 이 스킬의 핵심 전제 (codex v0.140.0, verified 2026-06-18)
-> codex `image_gen` 은 결과를 **디스크 파일로 저장하지 않는다.** 이미지는 세션 rollout jsonl(`~/.codex/sessions/.../rollout-*-<SID>.jsonl`)의 `image_generation_call.result` 에 **인라인 base64** 로만 들어온다. 따라서:
-> - **추출·검증은 `scripts/extract_imagegen.py`** 로 그 base64 를 결정론적으로 디코드해 `$DEST` 에 쓴다. `~/.codex/generated_images/.../ig_*.png` 를 `find` 하면 항상 0 hit 이므로 쓰지 않고, codex(LLM)에게 경로를 묻지도 않는다(환각 방지).
+> ## image_gen 출력 모델 — 이 스킬의 핵심 전제 (codex v0.144.1, verified 2026-07-10)
+> codex `image_gen` 은 이미지를 세션 rollout jsonl(`~/.codex/sessions/.../rollout-*-<SID>.jsonl`)에 **인라인 base64** 로 싣는다. 레코드 이름은 codex 버전마다 다르다 — `0.140.0` = response_item `image_generation_call.result`, `0.144.1` = event_msg `image_generation_end.result`(+`status`,`saved_path`). `extract_imagegen.py` 가 두 타입을 모두 읽는다.
+> `0.144.1` 은 `saved_path` 로 디스크 저장을 되살렸지만 **그 경로는 쓰지 않는다** — 인라인 디코드만 진실이다(경로 환각 표면 재개방 방지). 따라서:
+> - **추출·검증은 `scripts/extract_imagegen.py`** 로 그 base64 를 결정론적으로 디코드해 `$DEST` 에 쓴다. `~/.codex/generated_images/` 는 쓰지 않는다 — v0.140.0 에선 아예 안 생겼고(항상 0 hit), v0.144.1 에선 다시 생기지만(`<sid>/call_*.png`) 그 경로를 믿는 순간 codex(LLM)에게 경로를 되묻는 환각 표면이 살아난다. 인라인 디코드만 진실.
 > - **`--ephemeral` 금지** — 세션 jsonl 이 디스크에 남아야 추출 가능 (추출 후 직접 청소).
 > - **증상→원인**: codex 가 "image_gen 결과 PNG의 파일시스템 절대 경로를 확인할 수 없습니다" 로 끝나면 = 추출을 안 한 것. image_gen·인증은 정상이다.
 > - **무관한 노이즈**: `codex exec` stderr 의 `rmcp::transport::worker ... Auth(AuthorizationRequired)` 는 Cloudflare MCP 서버 인증 실패 로그지 image_gen 과 무관 — 무시. (없애려면 codex `config.toml` 에서 해당 MCP 인증/비활성화.)
@@ -224,7 +225,7 @@ PROMPT
 
 - **silent 실패 = `--sandbox workspace-write` 누락**. 디폴트 `read-only` sandbox 면 codex 가 image_gen 등록 안 함 → tool call 자체가 안 일어나고 `codex` 빈 응답만 나옴. 검증 단서: `sandbox: read-only` 가 stdout 헤더에 찍히면 무조건 워크스페이스-라이트로 다시. (검증: `--sandbox workspace-write` 명시 후 같은 prompt 로 호출 즉시 image_gen 호출됨.)
 - **silent 실패 = `--add-dir` 누락**. `workspace-write` 만으로는 generated_images writable 아님. 이 시스템에서 검증된 핵심 단서.
-- **(v0.140.0) image_gen 은 디스크에 파일을 안 떨군다 — 인라인 base64 만**. `~/.codex/generated_images/<sid>/ig_<hex>.png` 를 `find` 하면 항상 0 hit. 이미지는 세션 rollout jsonl 의 `image_generation_call.result` 에만 있다. **`extract_imagegen.py` 로 디코드해야 파일이 생긴다.** (이게 "image_gen 안 됨"의 진짜 원인이었음 — 인증·생성은 정상.) → 그래서 `--ephemeral` 금지 (세션파일 있어야 추출).
+- **image_gen 결과의 진실은 세션 rollout jsonl 의 인라인 base64 다.** 레코드 이름은 codex 버전마다 다르다 — v0.140.0 `image_generation_call.result`, v0.144.1 `image_generation_end.result`. **`extract_imagegen.py` 로 디코드해야 파일이 생긴다.** (v0.140.0 에서 "image_gen 안 됨"의 진짜 원인이 이거였음 — 인증·생성은 정상. v0.144.1 에서 레코드 rename 으로 같은 증상이 재발했다.) → 그래서 `--ephemeral` 금지 (세션파일 있어야 추출). v0.144.1 은 `<sid>/call_*.png` 로 디스크 저장을 되살렸지만 그 경로는 신뢰하지 않는다.
 - **codex 응답의 거짓 경로**. 응답에 `/tmp/<sandbox>/generated_image.png` 같은 경로가 적혀도 신뢰 X — 실제 파일은 없다. `extract_imagegen.py` 가 디코드해 쓴 `$RAW` 만 신뢰.
 - **`rmcp ... Auth(AuthorizationRequired)` stderr 노이즈 무시**. Cloudflare MCP 서버(`cloudflare-bindings/builds/observability`) 인증 실패 로그지 image_gen 과 무관. "인증 안 됨" 처럼 보이지만 image_gen 은 정상 동작. 없애려면 codex `config.toml` 에서 해당 MCP authenticate/비활성화.
 - **bwrap loopback / sandbox introspection 에러 무시**. codex 가 sandbox 내부 검사하다 `RTM_NEWADDR` 같은 에러 출력해도 실패 아님. 추출된 파일 존재·PNG magic 만 봄.

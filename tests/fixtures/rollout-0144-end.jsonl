@@ -1,0 +1,4 @@
+{"payload":{"type":"message","role":"user","content":"prompt"}}
+{"payload":{"type":"function_call","name":"imagegen","namespace":"image_gen","call_id":"call_x"}}
+{"payload":{"type":"image_generation_end","call_id":"call_x","status":"completed","revised_prompt":"...","saved_path":"/does/not/exist.png","result":"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYPj/HwADAgH/5ncLrgAAAABJRU5ErkJggg=="}}
+{"payload":{"type":"agent_message","message":""}}

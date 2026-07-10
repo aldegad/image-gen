@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.1 — 2026-07-10
+
+codex v0.144.1 대응: 인라인 base64 를 싣는 rollout 레코드 이름이 바뀌었다.
+
+- **원인**: codex 0.140.0 은 `response_item` 의 `image_generation_call.result` 로 인라인 base64 를 줬다. 0.144.1 은 같은 payload 를 `event_msg` 의 `image_generation_end` (필드: `status`, `revised_prompt`, `result`, `saved_path`) 로 옮겼고, function_call 도 `name=imagegen ns=image_gen` 이 됐다. 추출기가 옛 타입만 보고 있어서, 이미지가 정상 생성됐는데도 `no image_generation_call result` 로 실패했다. 발견 경로: solvell 주인공 도트 베이스 생성 3롤 전멸 (codex 가 세션 도중 0.143.0 → 0.144.1 로 자동 업데이트됨).
+- **변경**: `RESULT_TYPES` 로 두 레코드 타입을 모두 1급 취급한다 (폴백이 아니라 버전별 캐노니컬 레코드). `status` 가 있고 `completed` 가 아니면 조용히 넘기지 않고 non-zero 로 죽는다.
+- **유지**: 0.144.1 이 되살린 `saved_path` 는 신뢰하지 않는다 — 인라인 base64 디코드만 진실이다. 경로를 다시 믿기 시작하면 1.1.0 이 제거한 경로 환각 표면이 되살아난다.
+- **테스트**: `rollout-0144-end.jsonl`(completed → 디코드), `rollout-0144-failed.jsonl`(failed → 큰 소리로 실패) fixture 추가. 7 tests OK.
+- **검증**: 실패한 5개 세션에서 재생성 없이 PNG 5장 회수.
+
 ## 1.2.0 — 2026-07-07
 
 크로마 키 분기 게이트 + 본문 히스토리 격리.

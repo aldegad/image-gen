@@ -59,7 +59,27 @@ class ExtractImagegenTests(unittest.TestCase):
             result = run_extract(FIXTURES / "rollout-no-image.jsonl", dest)
 
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("no image_generation_call result", result.stderr)
+            self.assertIn("image_generation_call", result.stderr)
+            self.assertIn("image_generation_end", result.stderr)
+            self.assertFalse(dest.exists())
+
+    def test_codex_0144_image_generation_end_record(self) -> None:
+        """codex 0.144.1 renamed the inline-base64 record; both types must decode."""
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "out.png"
+            result = run_extract(FIXTURES / "rollout-0144-end.jsonl", dest)
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(dest.read_bytes(), BLUE_PNG)
+
+    def test_codex_0144_failed_status_fails_loudly(self) -> None:
+        """A non-completed image_gen call must not be decoded as a success."""
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "out.png"
+            result = run_extract(FIXTURES / "rollout-0144-failed.jsonl", dest)
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("status='failed'", result.stderr)
             self.assertFalse(dest.exists())
 
     def test_non_png_result_fails_loudly(self) -> None:
